@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">LinusBot</string>
+        <string name="botao_0">Frente</string>
+        <string name="botao_1">Tras</string>
+        <string name="botao_2">Direita</string>
+        <string name="botao_3">Esquerda</string>
+        <string name="botao_4">Line-follower</string>
+        <string name="botao_5">Calibra</string>
+        <string name="botao_6">Turbo</string>
+        <string name="botao_7">180</string>
+    <string-array name="botoes">
+        <item>F</item>
+        <item>B</item>
+        <item>R</item>
+        <item>L</item>
+        <item>LF</item>
+        <item>C</item>
+        <item>T</item>
+        <item>V</item>
+    </string-array>
+</resources>

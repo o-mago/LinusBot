@@ -14,6 +14,8 @@ import android.widget.RelativeLayout;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import io.github.controlwear.virtual.joystick.android.JoystickView;
+
 /**
  * Created by root on 05/03/18.
  */
@@ -34,38 +36,71 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
     ImageButton calibrate;
     ImageButton turbo;
     ImageButton vira;
-
-
+    JoystickView joystick;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_controle_remoto);
+        setContentView(R.layout.controle_remoto_v2);
 
         sharedPref = getSharedPreferences("linus", 0);
         editor = sharedPref.edit();
 
         findViewById(R.id.config).setOnClickListener(this);
         findViewById(R.id.disconnect).setOnClickListener(this);
-        center_buttons = findViewById(R.id.arrows);
-        right_buttons = findViewById(R.id.buttons_right);
-        left_buttons = findViewById(R.id.buttons_left);
-        arrowUp = findViewById(R.id.arrow_up);
-        arrowDown = findViewById(R.id.arrow_down);
-        arrowRight = findViewById(R.id.arrow_right);
-        arrowLeft = findViewById(R.id.arrow_left);
+//        center_buttons = findViewById(R.id.arrows);
+//        right_buttons = findViewById(R.id.buttons_right);
+//        left_buttons = findViewById(R.id.buttons_left);
+//        arrowUp = findViewById(R.id.arrow_up);
+//        arrowDown = findViewById(R.id.arrow_down);
+//        arrowRight = findViewById(R.id.arrow_right);
+//        arrowLeft = findViewById(R.id.arrow_left);
         lineFollower = findViewById(R.id.switch_line_follower);
         calibrate = findViewById(R.id.calibrate);
         turbo = findViewById(R.id.turbo);
         vira = findViewById(R.id.cento_e_oitenta);
-        setButtons(arrowUp, 0, getResources().getDrawable(R.drawable.arrow_up));
-        setButtons(arrowDown, 1, getResources().getDrawable(R.drawable.arrow_down));
-        setButtons(arrowRight, 2, getResources().getDrawable(R.drawable.arrow_right));
-        setButtons(arrowLeft, 3, getResources().getDrawable(R.drawable.arrow_left));
+        joystick = findViewById(R.id.joystick);
+//        setButtons(arrowUp, 0, getResources().getDrawable(R.drawable.arrow_up));
+//        setButtons(arrowDown, 1, getResources().getDrawable(R.drawable.arrow_down));
+//        setButtons(arrowRight, 2, getResources().getDrawable(R.drawable.arrow_right));
+//        setButtons(arrowLeft, 3, getResources().getDrawable(R.drawable.arrow_left));
         setButtons(lineFollower, 4, getResources().getDrawable(R.drawable.line_follower));
         setButtons(calibrate, 5, getResources().getDrawable(R.drawable.calibrate));
         setButtons(turbo, 6, getResources().getDrawable(R.drawable.turbo));
         setButtons(vira, 7, getResources().getDrawable(R.drawable.cento_e_oitenta));
+        joystick.setOnMoveListener(new JoystickView.OnMoveListener() {
+            @Override
+            public void onMove(int angle, int strength) {
+                try {
+                    if (angle > 333 || angle <= 27) {
+                        write(sharedPref.getString("switch_2", "R"));
+                    }
+                    if (angle > 27 && angle <= 72) {
+                        write(sharedPref.getString("switch_4", "FR"));
+                    }
+                    if (angle > 72 && angle <= 117) {
+                        write(sharedPref.getString("switch_0", "F"));
+                    }
+                    if (angle > 117 && angle <= 162) {
+                        write(sharedPref.getString("switch_5", "FL"));
+                    }
+                    if (angle > 162 && angle <= 207) {
+                        write(sharedPref.getString("switch_3", "L"));
+                    }
+                    if (angle > 207 && angle <= 252) {
+                        write(sharedPref.getString("switch_6", "BL"));
+                    }
+                    if (angle > 252 && angle <= 297) {
+                        write(sharedPref.getString("switch_1", "B"));
+                    }
+                    if (angle > 297 && angle <= 333) {
+                        write(sharedPref.getString("switch_7", "BR"));
+                    }
+                } catch (IOException e) {
+
+                }
+            }
+        });
 
         outputStream = MainActivity.getOutStream();
     }
@@ -109,52 +144,59 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
         int id = view.getId();
         Log.d("CARRO", "TO AQUI");
         if(event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (id == R.id.arrow_up && sharedPref.getBoolean("switch_0", true)) {
+//            if (id == R.id.arrow_up && sharedPref.getBoolean("switch_0", true)) {
+//                try {
+//                    write(sharedPref.getString("botao_0", "F"));
+//                    Log.d("CARRO", "FRENTE");
+//                } catch (IOException e) {
+//                    Log.d("CARRO", "MERDA");
+//                }
+//            }
+//            if (id == R.id.arrow_down && sharedPref.getBoolean("switch_1", true)) {
+//                try {
+//                    write(sharedPref.getString("botao_1", "B"));
+//                } catch (IOException e) {
+//
+//                }
+//            }
+//            if (id == R.id.arrow_right && sharedPref.getBoolean("switch_2", true)) {
+//                try {
+//                    write(sharedPref.getString("botao_2", "R"));
+//                } catch (IOException e) {
+//
+//                }
+//            }
+//            if (id == R.id.arrow_left && sharedPref.getBoolean("switch_3", true)) {
+//                try {
+//                    write(sharedPref.getString("botao_3", "L"));
+//                } catch (IOException e) {
+//
+//                }
+//            }
+            if (id == R.id.switch_line_follower && sharedPref.getBoolean("switch_4", true)) {
                 try {
-                    write(sharedPref.getString("botao_0", "F"));
-                    Log.d("CARRO", "FRENTE");
-                } catch (IOException e) {
-                    Log.d("CARRO", "MERDA");
-                }
-            }
-            if (id == R.id.arrow_down && sharedPref.getBoolean("switch_0", true)) {
-                try {
-                    write(sharedPref.getString("botao_1", "B"));
-                } catch (IOException e) {
-
-                }
-            }
-            if (id == R.id.arrow_right && sharedPref.getBoolean("switch_0", true)) {
-                try {
-                    write(sharedPref.getString("botao_2", "R"));
-                } catch (IOException e) {
-
-                }
-            }
-            if (id == R.id.switch_line_follower && sharedPref.getBoolean("switch_0", true)) {
-                try {
-                    write(sharedPref.getString("botao_4", "LF"));
-                } catch (IOException e) {
-
-                }
-            }
-            if (id == R.id.calibrate && sharedPref.getBoolean("switch_0", true)) {
-                try {
-                    write(sharedPref.getString("botao_5", "C"));
-                } catch (IOException e) {
-
-                }
-            }
-            if (id == R.id.turbo && sharedPref.getBoolean("switch_0", true)) {
-                try {
-                    write(sharedPref.getString("botao_6", "T"));
+                    write(sharedPref.getString("botao_8", "LF"));
                 } catch (IOException e) {
 
                 }
             }
-            if (id == R.id.cento_e_oitenta && sharedPref.getBoolean("switch_0", true)) {
+            if (id == R.id.calibrate && sharedPref.getBoolean("switch_5", true)) {
                 try {
-                    write(sharedPref.getString("botao_7", "V"));
+                    write(sharedPref.getString("botao_9", "C"));
+                } catch (IOException e) {
+
+                }
+            }
+            if (id == R.id.turbo && sharedPref.getBoolean("switch_6", true)) {
+                try {
+                    write(sharedPref.getString("botao_10", "T"));
+                } catch (IOException e) {
+
+                }
+            }
+            if (id == R.id.cento_e_oitenta && sharedPref.getBoolean("switch_7", true)) {
+                try {
+                    write(sharedPref.getString("botao_11", "V"));
                 } catch (IOException e) {
 
                 }
@@ -173,5 +215,17 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
     public void write(String s) throws IOException {
         outputStream.write(s.getBytes());
         Log.d("SAIDA", s);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        BluetoothSocket socket = MainActivity.getSocket();
+        try {
+            socket.close();
+        } catch (IOException e) {
+
+        }
+        finish();
     }
 }

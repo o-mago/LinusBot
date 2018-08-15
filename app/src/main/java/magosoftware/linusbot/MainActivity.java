@@ -1,18 +1,26 @@
 package magosoftware.linusbot;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +33,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -45,16 +54,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
     private InputStream inStream;
     static OutputStream outputStream;
+    ProgressDialog procurarDialog;
+    IntentFilter filter;
+    int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             // When discovery finds a device
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Get the BluetoothDevice object from the Intent
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                // Add the name and address to an array adapter to show in a ListView
-                mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+            if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                procurarDialog = ProgressDialog.show(MainActivity.this, "Procurar Dispositivos","Procurando...", true, false);
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                procurarDialog.dismiss();
+                listDevices();
+            } else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                //bluetooth device found
+                BluetoothDevice device = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if((""+device.getName()).equals("null")) {
+                    Log.d("DEV/MAIN", "Dispositivo: "+"Dispositivo sem nome"+" - "+device.getAddress());
+                    mArrayList.add("Dispositivo sem nome" + "\n" + device.getAddress());
+                } else {
+                    Log.d("DEV/MAIN", "Dispositivo: " + device.getName() + " - " + device.getAddress());
+                    mArrayList.add(device.getName() + "\n" + device.getAddress());
+                }
             }
         }
     };
@@ -63,6 +85,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mArrayList = new ArrayList<>();
+
+        filter = new IntentFilter();
+
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+
+        registerReceiver(mReceiver, filter);
 
         listView = findViewById(R.id.lista);
         findViewById(R.id.list_button).setOnClickListener(this);
@@ -83,10 +114,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             // Register the BroadcastReceiver
             if(mBluetoothAdapter.isEnabled()) {
-                IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-                registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-
-                listDevices();
+                mArrayList = new ArrayList<>();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {  // Only ask for these permissions on runtime when running Android 6.0 or higher
+                    switch (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                        case PackageManager.PERMISSION_DENIED:
+                            ActivityCompat.requestPermissions(this,
+                                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                    MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+                            break;
+                        case PackageManager.PERMISSION_GRANTED:
+                            if (mBluetoothAdapter.isDiscovering()) {
+                                mBluetoothAdapter.cancelDiscovery();
+                            }
+                            mBluetoothAdapter.startDiscovery();
+                            break;
+                    }
+                }
+//                listDevices();
             }
 
             // Create a BroadcastReceiver for ACTION_FOUND
@@ -123,16 +167,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //    }
 
     public void listDevices(){
-        pairedDevices = mBluetoothAdapter.getBondedDevices();
-        mArrayList = new ArrayList<>();
-        // If there are paired devices
-        if (pairedDevices.size() > 0) {
-            // Loop through paired devices
-            for (BluetoothDevice device : pairedDevices) {
-                // Add the name and address to an array adapter to show in a ListView
-                mArrayList.add(device.getName() + "\n" + device.getAddress());
-            }
-        }
+//        pairedDevices = mBluetoothAdapter.getBondedDevices();
+//        mArrayList = new ArrayList<>();
+//        // If there are paired devices
+//        if (pairedDevices.size() > 0) {
+//            // Loop through paired devices
+//            for (BluetoothDevice device : pairedDevices) {
+//                // Add the name and address to an array adapter to show in a ListView
+//                Log.d("DEV/MAIN", "Endereço:"+device.getAddress());
+//                mArrayList.add(device.getName() + "\n" + device.getAddress());
+//            }
+//        }
 
         final ArrayAdapter mArrayAdapter = new  ArrayAdapter(this,android.R.layout.simple_list_item_1, mArrayList);
 
@@ -142,12 +187,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onItemClick(AdapterView<?>adapter,View v, int position, long arg3){
                 String nomeEendereco = listView.getItemAtPosition(position).toString();
+                Log.d("DEV/MAIN", "Endereço ListView:"+listView.getItemAtPosition(position));
                 String endereco = nomeEendereco.split("\n")[1];
                 Log.d("SOCKET", endereco);
                 mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(endereco);
-                mBluetoothConnectProgressDialog = ProgressDialog.show(MainActivity.this, "Conectando...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
-                Thread mBlutoothConnectThread = new Thread(MainActivity.this);
-                mBlutoothConnectThread.start();
+                if(mBluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
+                    mBluetoothConnectProgressDialog = ProgressDialog.show(MainActivity.this, "Conectando...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
+                    Thread mBlutoothConnectThread = new Thread(MainActivity.this);
+                    mBlutoothConnectThread.start();
+                } else {
+                    AlertDialog parear = new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Dispositivo não pareado")
+                            .setMessage("Pareie o dispositivo através do menu Bluetooth do seu dispositivo")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .show();
+                }
             }
         });
     }
@@ -159,8 +218,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //            Intent intent = new Intent();
 //            Parcelable[] uuidExtra = intent.getParcelableArrayExtra("android.bluetooth.device.extra.UUID");
 //            ArrayList<UUID> uuidCandidates = new ArrayList<UUID>();
+            mBluetoothDevice.fetchUuidsWithSdp();
             ParcelUuid[] uuidCandidates = mBluetoothDevice.getUuids();
-            Log.d("SOCKET", "WOW");
+//            Method getUuidsMethod = BluetoothAdapter.class.getDeclaredMethod("getUuids", null);
+//            ParcelUuid[] uuid = (ParcelUuid[]) getUuidsMethod.invoke(mBluetoothAdapter, null);
+            Log.d("SOCKET", "mBluetoothDevice: "+uuidCandidates.length);
             for(ParcelUuid uuids : uuidCandidates) {
                 mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(uuids.getUuid());
                 mBluetoothAdapter.cancelDiscovery();
@@ -176,8 +238,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             outputStream = mBluetoothSocket.getOutputStream();
             Intent intent = new Intent(MainActivity.this, ControleRemoto.class);
             startActivity(intent);
+            finish();
         }
-        catch (IOException eConnectException)
+        catch (Exception eConnectException)
         {
             Log.d("SOCKET", "CouldNotConnectToSocket", eConnectException);
             closeSocket(mBluetoothSocket);
@@ -211,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void handleMessage(Message msg)
         {
             mBluetoothConnectProgressDialog.dismiss();
-            Toast.makeText(MainActivity.this, "DeviceConnected", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "Dispositivo Conectado", Toast.LENGTH_LONG).show();
         }
     };
 
@@ -271,4 +334,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        }
 //    }
 
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        try {
+            unregisterReceiver(mReceiver);
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
 }

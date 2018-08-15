@@ -116,6 +116,10 @@ public class Config extends AppCompatActivity implements LineAdapter.OnItemClick
         icones.add(getResources().getDrawable(R.drawable.arrow_down));
         icones.add(getResources().getDrawable(R.drawable.arrow_right));
         icones.add(getResources().getDrawable(R.drawable.arrow_left));
+        icones.add(getResources().getDrawable(R.drawable.diagonal_cima_direita));
+        icones.add(getResources().getDrawable(R.drawable.diagonal_cima_esquerda));
+        icones.add(getResources().getDrawable(R.drawable.diagonal_baixo_esquerda));
+        icones.add(getResources().getDrawable(R.drawable.diagonal_baixo_direita));
         icones.add(getResources().getDrawable(R.drawable.line_follower));
         icones.add(getResources().getDrawable(R.drawable.calibrate));
         icones.add(getResources().getDrawable(R.drawable.turbo));
@@ -128,6 +132,5 @@ public class Config extends AppCompatActivity implements LineAdapter.OnItemClick
         }
         mAdapter.add(mModels);
         mAdapter.setOnClick(this);
-
     }
 }

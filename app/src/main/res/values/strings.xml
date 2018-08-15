@@ -1,18 +1,26 @@
 <resources>
     <string name="app_name">LinusBot</string>
-        <string name="botao_0">Frente</string>
-        <string name="botao_1">Tras</string>
-        <string name="botao_2">Direita</string>
-        <string name="botao_3">Esquerda</string>
-        <string name="botao_4">Line-follower</string>
-        <string name="botao_5">Calibra</string>
-        <string name="botao_6">Turbo</string>
-        <string name="botao_7">180</string>
+    <string name="botao_0">Frente</string>
+    <string name="botao_1">Tras</string>
+    <string name="botao_2">Direita</string>
+    <string name="botao_3">Esquerda</string>
+    <string name="botao_4">Frente-Direita</string>
+    <string name="botao_5">Frente-Esquerda</string>
+    <string name="botao_6">Baixo-Esquerda</string>
+    <string name="botao_7">Baixo-Direita</string>
+    <string name="botao_8">Line-follower</string>
+    <string name="botao_9">Calibra</string>
+    <string name="botao_10">Turbo</string>
+    <string name="botao_11">180</string>
     <string-array name="botoes">
         <item>F</item>
         <item>B</item>
         <item>R</item>
         <item>L</item>
+        <item>FR</item>
+        <item>FL</item>
+        <item>BL</item>
+        <item>BR</item>
         <item>LF</item>
         <item>C</item>
         <item>T</item>

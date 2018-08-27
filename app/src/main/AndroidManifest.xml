@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -14,17 +15,23 @@
         android:supportsRtl="true"
         android:largeHeap="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:theme="@style/AppTheme" android:screenOrientation="portrait" android:name=".SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:theme="@style/NoActionBar" android:screenOrientation="landscape" android:name=".ControleRemoto">
+        <activity android:theme="@style/AppTheme" android:screenOrientation="portrait" android:name=".MainActivity">
+        </activity>
+        <activity android:theme="@style/AppTheme" android:screenOrientation="landscape" android:name=".ControleRemoto">
         </activity>
         <activity android:name=".Config">
         </activity>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="5098f74b279998f956b1298eeef7086b0f594ce0" />
     </application>
 
+    <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

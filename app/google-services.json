@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "814716673788",
+    "firebase_url": "https://linusbot-6f6a5.firebaseio.com",
+    "project_id": "linusbot-6f6a5",
+    "storage_bucket": "linusbot-6f6a5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:814716673788:android:5a309ae7b80cd2ac",
+        "android_client_info": {
+          "package_name": "magosoftware.linusbot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "814716673788-foelaufa9g2sthd1e77vd62pevbt7ifp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "magosoftware.linusbot",
+            "certificate_hash": "baf5260e007a0d864fff3b82fb81b2095a8092ff"
+          }
+        },
+        {
+          "client_id": "814716673788-36vrttsoro2r15votfm0ga7jfhp56jtt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8x5fxkTXNiZPLR0Ml5i2m60jQRCKorww"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "814716673788-36vrttsoro2r15votfm0ga7jfhp56jtt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

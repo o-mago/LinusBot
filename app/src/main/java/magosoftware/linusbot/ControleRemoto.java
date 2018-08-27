@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,7 +21,7 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  * Created by root on 05/03/18.
  */
 
-public class ControleRemoto extends MainActivity implements View.OnTouchListener, View.OnClickListener{
+public class ControleRemoto extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener{
 
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
@@ -37,6 +38,7 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
     ImageButton turbo;
     ImageButton vira;
     JoystickView joystick;
+    OutputStream outputStream;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,6 +47,7 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
 
         sharedPref = getSharedPreferences("linus", 0);
         editor = sharedPref.edit();
+        outputStream = Bluetooth.getOutStream();
 
         findViewById(R.id.config).setOnClickListener(this);
         findViewById(R.id.disconnect).setOnClickListener(this);
@@ -72,29 +75,32 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
             @Override
             public void onMove(int angle, int strength) {
                 try {
-                    if (angle > 333 || angle <= 27) {
+                    if ((angle > 333 && angle < 360) || (angle> 0 && angle <= 27)) {
                         write(sharedPref.getString("switch_2", "R"));
                     }
-                    if (angle > 27 && angle <= 72) {
+                    else if (angle > 27 && angle <= 72) {
                         write(sharedPref.getString("switch_4", "FR"));
                     }
-                    if (angle > 72 && angle <= 117) {
+                    else if (angle > 72 && angle <= 117) {
                         write(sharedPref.getString("switch_0", "F"));
                     }
-                    if (angle > 117 && angle <= 162) {
+                    else if (angle > 117 && angle <= 162) {
                         write(sharedPref.getString("switch_5", "FL"));
                     }
-                    if (angle > 162 && angle <= 207) {
+                    else if (angle > 162 && angle <= 207) {
                         write(sharedPref.getString("switch_3", "L"));
                     }
-                    if (angle > 207 && angle <= 252) {
+                    else if (angle > 207 && angle <= 252) {
                         write(sharedPref.getString("switch_6", "BL"));
                     }
-                    if (angle > 252 && angle <= 297) {
+                    else if (angle > 252 && angle <= 297) {
                         write(sharedPref.getString("switch_1", "B"));
                     }
-                    if (angle > 297 && angle <= 333) {
+                    else if (angle > 297 && angle <= 333) {
                         write(sharedPref.getString("switch_7", "BR"));
+                    }
+                    else {
+                        write("S");
                     }
                 } catch (IOException e) {
 
@@ -102,7 +108,7 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
             }
         });
 
-        outputStream = MainActivity.getOutStream();
+        outputStream = Bluetooth.getOutStream();
     }
 
     public void setButtons(ImageButton imageButton, int position, Drawable imagem) {
@@ -127,7 +133,7 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
             startActivity(intent);
         }
         if(id == R.id.disconnect) {
-            BluetoothSocket socket = MainActivity.getSocket();
+            BluetoothSocket socket = Bluetooth.getSocket();
             try {
                 socket.close();
                 Intent intent = new Intent(this, MainActivity.class);
@@ -220,7 +226,7 @@ public class ControleRemoto extends MainActivity implements View.OnTouchListener
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        BluetoothSocket socket = MainActivity.getSocket();
+        BluetoothSocket socket = Bluetooth.getSocket();
         try {
             socket.close();
         } catch (IOException e) {

@@ -14,15 +14,22 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -39,309 +46,150 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, Runnable{
+public class MainActivity extends AppCompatActivity {
 
-    ArrayAdapter<String> mArrayAdapter;
-    private static final int REQUEST_ENABLE_BT = 12;
-    private ListView listView;
-    private BluetoothAdapter adapter;
-    BluetoothAdapter mBluetoothAdapter;
-    Set<BluetoothDevice> pairedDevices;
-    ArrayList<String> mArrayList;
-    static BluetoothSocket mBluetoothSocket;
-    BluetoothDevice mBluetoothDevice;
-    ProgressDialog mBluetoothConnectProgressDialog;
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
-    private InputStream inStream;
-    static OutputStream outputStream;
-    ProgressDialog procurarDialog;
-    IntentFilter filter;
-    int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            // When discovery finds a device
-            if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-                procurarDialog = ProgressDialog.show(MainActivity.this, "Procurar Dispositivos","Procurando...", true, false);
-            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                procurarDialog.dismiss();
-                listDevices();
-            } else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                //bluetooth device found
-                BluetoothDevice device = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                if((""+device.getName()).equals("null")) {
-                    Log.d("DEV/MAIN", "Dispositivo: "+"Dispositivo sem nome"+" - "+device.getAddress());
-                    mArrayList.add("Dispositivo sem nome" + "\n" + device.getAddress());
-                } else {
-                    Log.d("DEV/MAIN", "Dispositivo: " + device.getName() + " - " + device.getAddress());
-                    mArrayList.add(device.getName() + "\n" + device.getAddress());
-                }
-            }
-        }
-    };
+    private Toolbar myToolbar;
+    private String[] mTitles;
+    private ListView mDrawerList;
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private CharSequence mTitle;
+    private CharSequence mDrawerTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mArrayList = new ArrayList<>();
-
-        filter = new IntentFilter();
-
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-
-        registerReceiver(mReceiver, filter);
-
-        listView = findViewById(R.id.lista);
-        findViewById(R.id.list_button).setOnClickListener(this);
+        myToolbar = new Toolbar(this);
+        myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        setupMenu();
+        if (savedInstanceState == null) {
+            selectItem(0);
+        }
+        replaceFragment(new Cronometro());
     }
 
-    @Override
-    public void onClick(View view) {
-        int id = view.getId();
-        if(id == R.id.list_button) {
-            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (mBluetoothAdapter == null) {
-                // Device does not support Bluetooth
+    private void setupMenu() {
+        //------------------Menu Hamburguer:---------------------------------
+        mTitles = getResources().getStringArray(R.array.menu_array);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerList = (ListView) findViewById(R.id.left_drawer);
+
+        // set a custom shadow that overlays the main content when the drawer opens
+        mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+        // set up the drawer's list view with items and click listener
+        mDrawerList.setAdapter(new ArrayAdapter<String>(this,
+                R.layout.drawer_list_item, mTitles));
+        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+
+        //myToolbar.setLogo(R.drawable.ic_action_menu);
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this,                  /* host Activity */
+                mDrawerLayout,         /* DrawerLayout object */
+                myToolbar,  /* nav drawer icon to replace 'Up' caret */
+                R.string.drawer_open,  /* "open drawer" description */
+                R.string.drawer_close  /* "close drawer" description */
+        ){
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                myToolbar.setTitle(mTitle);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
 
-            if (!mBluetoothAdapter.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                myToolbar.setTitle(mDrawerTitle);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
-            // Register the BroadcastReceiver
-            if(mBluetoothAdapter.isEnabled()) {
-                mArrayList = new ArrayList<>();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {  // Only ask for these permissions on runtime when running Android 6.0 or higher
-                    switch (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                        case PackageManager.PERMISSION_DENIED:
-                            ActivityCompat.requestPermissions(this,
-                                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                                    MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
-                            break;
-                        case PackageManager.PERMISSION_GRANTED:
-                            if (mBluetoothAdapter.isDiscovering()) {
-                                mBluetoothAdapter.cancelDiscovery();
-                            }
-                            mBluetoothAdapter.startDiscovery();
-                            break;
-                    }
-                }
-//                listDevices();
-            }
+        };
 
-            // Create a BroadcastReceiver for ACTION_FOUND
-        }
+        // Set the drawer toggle as the DrawerListener
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+
+        //------------------Fim Menu Hamburger-------------------------------
     }
 
-//    private void setBluetoothData() {
-//
-//        // Getting the Bluetooth adapter
-//        adapter = BluetoothAdapter.getDefaultAdapter();
-//        out.append("\nAdapter: " + adapter.toString() + "\n\nName: "
-//                + adapter.getName() + "\nAddress: " + adapter.getAddress());
-//
-//        // Check for Bluetooth support in the first place
-//        // Emulator doesn't support Bluetooth and will return null
-//
-//        if (adapter == null) {
-//            Toast.makeText(this, "Bluetooth NOT supported. Aborting.",
-//                    Toast.LENGTH_LONG).show();
-//        }
-//
-//        // Starting the device discovery
-//        out.append("\n\nStarting discovery...");
-//        adapter.startDiscovery();
-//        out.append("\nDone with discovery...\n");
-//
-//        // Listing paired devices
-//        out.append("\nDevices Pared:");
-//        Set<BluetoothDevice> devices = adapter.getBondedDevices();
-//        for (BluetoothDevice device : devices) {
-//            out.append("\nFound device: " + device.getName() + " Add: "
-//                    + device.getAddress());
-//        }
-//    }
-
-    public void listDevices(){
-//        pairedDevices = mBluetoothAdapter.getBondedDevices();
-//        mArrayList = new ArrayList<>();
-//        // If there are paired devices
-//        if (pairedDevices.size() > 0) {
-//            // Loop through paired devices
-//            for (BluetoothDevice device : pairedDevices) {
-//                // Add the name and address to an array adapter to show in a ListView
-//                Log.d("DEV/MAIN", "Endereço:"+device.getAddress());
-//                mArrayList.add(device.getName() + "\n" + device.getAddress());
-//            }
-//        }
-
-        final ArrayAdapter mArrayAdapter = new  ArrayAdapter(this,android.R.layout.simple_list_item_1, mArrayList);
-
-        listView.setAdapter(mArrayAdapter);
-
-        listView.setOnItemClickListener(new ListView.OnItemClickListener(){
-            @Override
-            public void onItemClick(AdapterView<?>adapter,View v, int position, long arg3){
-                String nomeEendereco = listView.getItemAtPosition(position).toString();
-                Log.d("DEV/MAIN", "Endereço ListView:"+listView.getItemAtPosition(position));
-                String endereco = nomeEendereco.split("\n")[1];
-                Log.d("SOCKET", endereco);
-                mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(endereco);
-                if(mBluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
-                    mBluetoothConnectProgressDialog = ProgressDialog.show(MainActivity.this, "Conectando...", mBluetoothDevice.getName() + " : " + mBluetoothDevice.getAddress(), true, false);
-                    Thread mBlutoothConnectThread = new Thread(MainActivity.this);
-                    mBlutoothConnectThread.start();
-                } else {
-                    AlertDialog parear = new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("Dispositivo não pareado")
-                            .setMessage("Pareie o dispositivo através do menu Bluetooth do seu dispositivo")
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.dismiss();
-                                }
-                            })
-                            .show();
-                }
-            }
-        });
-    }
-
-    public void run()
-    {
-        try
-        {
-//            Intent intent = new Intent();
-//            Parcelable[] uuidExtra = intent.getParcelableArrayExtra("android.bluetooth.device.extra.UUID");
-//            ArrayList<UUID> uuidCandidates = new ArrayList<UUID>();
-            mBluetoothDevice.fetchUuidsWithSdp();
-            ParcelUuid[] uuidCandidates = mBluetoothDevice.getUuids();
-//            Method getUuidsMethod = BluetoothAdapter.class.getDeclaredMethod("getUuids", null);
-//            ParcelUuid[] uuid = (ParcelUuid[]) getUuidsMethod.invoke(mBluetoothAdapter, null);
-            Log.d("SOCKET", "mBluetoothDevice: "+uuidCandidates.length);
-            for(ParcelUuid uuids : uuidCandidates) {
-                mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(uuids.getUuid());
-                mBluetoothAdapter.cancelDiscovery();
-                try {
-                    mBluetoothSocket.connect();
-                    break;
-                }
-                catch (IOException e) {
-                    Log.d("MERDA", uuids.toString());
-                }
-            }
-            mHandler.sendEmptyMessage(0);
-            outputStream = mBluetoothSocket.getOutputStream();
-            Intent intent = new Intent(MainActivity.this, ControleRemoto.class);
-            startActivity(intent);
-            finish();
-        }
-        catch (Exception eConnectException)
-        {
-            Log.d("SOCKET", "CouldNotConnectToSocket", eConnectException);
-            closeSocket(mBluetoothSocket);
-            return;
-        }
-    }
-
-    private void closeSocket(BluetoothSocket nOpenSocket)
-    {
-        try
-        {
-            nOpenSocket.close();
-            Log.d("SOCKET", "SocketClosed");
-        }
-        catch (IOException ex)
-        {
-            Log.d("SOCKET", "CouldNotCloseSocket");
-        }
-    }
-
-    public static OutputStream getOutStream() {
-        return outputStream;
-    }
-
-    public static BluetoothSocket getSocket() {
-        return mBluetoothSocket;
-    }
-
-    private Handler mHandler = new Handler() {
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
-        public void handleMessage(Message msg)
-        {
-            mBluetoothConnectProgressDialog.dismiss();
-            Toast.makeText(MainActivity.this, "Dispositivo Conectado", Toast.LENGTH_LONG).show();
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            selectItem(position);
         }
-    };
+    }
 
+    private void selectItem(int position) {
+        // update the main content by replacing fragments
+//        Fragment fragment = new PlanetFragment();
+//        Bundle args = new Bundle();
+//        args.putInt(PlanetFragment.ARG_PLANET_NUMBER, position);
+//        fragment.setArguments(args);
 //
+//        FragmentManager fragmentManager = getFragmentManager();
+//        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
 //
-//    private class ConnectedThread extends Thread {
-//        private final BluetoothSocket mmSocket;
-//        private final InputStream mmInStream;
-//        private final OutputStream mmOutStream;
-//
-//        public ConnectedThread(BluetoothSocket socket) {
-//            mmSocket = socket;
-//            InputStream tmpIn = null;
-//            OutputStream tmpOut = null;
-//
-//            // Get the input and output streams, using temp objects because
-//            // member streams are final
-//            try {
-//                tmpIn = socket.getInputStream();
-//                tmpOut = socket.getOutputStream();
-//            } catch (IOException e) { }
-//
-//            mmInStream = tmpIn;
-//            mmOutStream = tmpOut;
-//        }
-//
-//        public void run() {
-//            byte[] buffer = new byte[1024];  // buffer store for the stream
-//            int bytes; // bytes returned from read()
-//
-//            // Keep listening to the InputStream until an exception occurs
-//            while (true) {
-//                try {
-//                    // Read from the InputStream
-//                    bytes = mmInStream.read(buffer);
-//                    // Send the obtained bytes to the UI activity
-//                    mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
-//                            .sendToTarget();
-//                } catch (IOException e) {
-//                    break;
-//                }
-//            }
-//        }
-//
-//        /* Call this from the main activity to send data to the remote device */
-//        public void write(byte[] bytes) {
-//            try {
-//                mmOutStream.write(bytes);
-//            } catch (IOException e) { }
-//        }
-//
-//        /* Call this from the main activity to shutdown the connection */
-//        public void cancel() {
-//            try {
-//                mmSocket.close();
-//            } catch (IOException e) { }
-//        }
-//    }
+//        // update selected item and title, then close the drawer
+        switch(position) {
+            //Cronometro:
+            case 0:
+                replaceFragment(new Cronometro());
+                break;
+            //Bluetooth:
+            case 1:
+                replaceFragment(new Bluetooth());
+                break;
+                //Aulas
+            case 2:
+                replaceFragment(new Aulas());
+                break;
+            default:
+                break;
+        }
 
+        mDrawerList.setItemChecked(position, true);
+        setTitle(mTitles[position]);
+        mDrawerLayout.closeDrawer(mDrawerList);
+    }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        try {
-            unregisterReceiver(mReceiver);
-        } catch (IllegalArgumentException e) {
+    public void setTitle(CharSequence title) {
+        mTitle = title;
+        myToolbar.setTitle(mTitle);
+    }
 
-        }
+    private void replaceFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+        transaction.replace(R.id.fragment_container, fragment);
+        transaction.addToBackStack(null);
+
+        transaction.commit();
+    }
+
+    private void replaceFragmentWithArgs(Fragment fragment, String playlistId) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        Bundle bundle = new Bundle();
+        bundle.putString("playlistId", playlistId);
+        fragment.setArguments(bundle);
+        transaction.replace(R.id.fragment_container, fragment);
+        transaction.addToBackStack(null);
+
+        transaction.commit();
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Pass any configuration change to the drawer toggls
+        mDrawerToggle.onConfigurationChanged(newConfig);
     }
 }
